@@ -42,10 +42,17 @@ python scripts/quick_demo.py
 
 ### 3️⃣ Full Analysis with Real Data
 
+**Option A: Python Script (Recommended)**
 ```bash
 python scripts/volatility_forecasting_analysis.py
 ```
 ✅ Downloads S&P 500 2010-2024 | 📈 Generates plots | 💾 Saves results
+
+**Option B: Interactive Notebook**
+```bash
+jupyter notebook notebooks/00_volatility_forecasting_VaR.ipynb
+```
+✅ Run step-by-step with visualizations | 📊 Same full pipeline
 
 ---
 
