@@ -1,0 +1,9 @@
+yfinance,    # download financial data
+arch,        # GARCH models
+pmdarima,    # auto ARIMA
+scipy,       # statistical tests
+statsmodels, # ADF, KPSS, ACF
+matplotlib,  # plots
+seaborn,     # heatmaps
+pandas,
+numpy,
