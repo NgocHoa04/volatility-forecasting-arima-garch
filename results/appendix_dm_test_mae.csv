@@ -1,0 +1,7 @@
+Model (vs HAR-RV),DM Stat,p-value,Sig.,Better
+"GARCH(1,1)-Normal",-6.6618,0.0,***,Model 1 (e1)
+"GARCH(1,1)-Student-t",-6.6853,0.0,***,Model 1 (e1)
+"GJR-GARCH(1,1)-Normal",-4.4128,0.0,***,Model 1 (e1)
+"GJR-GARCH(1,1)-Student-t",-4.2035,0.0,***,Model 1 (e1)
+"EGARCH(1,1)-Normal",-4.1731,0.0,***,Model 1 (e1)
+"EGARCH(1,1)-Student-t",-3.8511,0.0001,***,Model 1 (e1)

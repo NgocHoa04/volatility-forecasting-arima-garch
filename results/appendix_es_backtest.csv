@@ -1,0 +1,8 @@
+Model,N violations,Mean z,t-stat,p-value,Pass?
+"GARCH(1,1)-Normal",13,-0.1832,-1.1553,0.2705,YES
+"GARCH(1,1)-Student-t",3,,,,N/A (too few)
+"GJR-GARCH(1,1)-Normal",17,-0.1478,-1.095,0.2897,YES
+"GJR-GARCH(1,1)-Student-t",3,,,,N/A (too few)
+"EGARCH(1,1)-Normal",13,-0.3032,-2.0947,0.0581,YES
+"EGARCH(1,1)-Student-t",4,,,,N/A (too few)
+HAR-RV,36,-0.3044,-3.7042,0.0007,NO
