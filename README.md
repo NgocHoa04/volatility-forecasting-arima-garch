@@ -49,7 +49,7 @@ pip install -r requirements.txt
 ```bash
 python scripts/quick_demo.py
 ```
-✅ Uses synthetic GARCH(1,1) data | ⏱️ ~2-3 minutes | 📊 Generates forecasts & backtests | 📁 Saves to `results/` & `report/figures/`
+✅ Uses synthetic GARCH(1,1) data | 📊 Generates forecasts & backtests | 📁 Saves to `results/` & `report/figures/`
 
 ### 3️⃣ Full Analysis with Real Data
 
