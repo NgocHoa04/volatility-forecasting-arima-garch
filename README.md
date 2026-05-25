@@ -22,16 +22,6 @@ Key features:
 - Kupiec POF and Christoffersen backtesting
 - Forecast accuracy comparison (MSE, MAE, QLIKE, Diebold-Mariano)
 
-## Installation
-
-```bash
-git clone <repo-url>
-cd volatility-forecasting-arima-garch
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-pip install -r requirements.txt
-```
-
 ## Quick Start
 
 ### 1️⃣ Prerequisites & Installation
