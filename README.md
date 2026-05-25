@@ -21,23 +21,35 @@ Features:
 
 ## Quick Start
 
-### 1️⃣ Installation
+### 1️⃣ Prerequisites & Installation
 
 ```bash
+# Require Python 3.9+
+python --version
+
 # Clone repository
 git clone <repo-url>
 cd volatility-forecasting-arima-garch
+
+# Create virtual environment (optional but recommended)
+python -m venv venv
+
+# Activate virtual environment
+# On Windows:
+venv\Scripts\activate
+# On macOS/Linux:
+source venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
 ```
 
-### 2️⃣ Run Demo (Recommended - No Downloads)
+### 2️⃣ Quick Demo
 
 ```bash
 python scripts/quick_demo.py
 ```
-✅ Uses synthetic GARCH data | ⏱️ ~5 minutes | 📊 Generates results
+✅ Uses synthetic GARCH(1,1) data | ⏱️ ~2-3 minutes | 📊 Generates forecasts & backtests | 📁 Saves to `results/` & `report/figures/`
 
 ### 3️⃣ Full Analysis with Real Data
 
@@ -45,13 +57,13 @@ python scripts/quick_demo.py
 ```bash
 python scripts/volatility_forecasting_analysis.py
 ```
-✅ Downloads S&P 500 2010-2024 | 📈 Generates plots | 💾 Saves results
+✅ Downloads S&P 500 daily prices (2010-2024) | 📈 Generates 6 GARCH variants + HAR-RV comparison | 💾 Saves results & plots
 
-**Option B: Interactive Notebook**
+**Option B: Interactive Jupyter Notebook**
 ```bash
 jupyter notebook notebooks/00_volatility_forecasting_VaR.ipynb
 ```
-✅ Run step-by-step with visualizations | 📊 Same full pipeline
+✅ Full pipeline with step-by-step execution | 📊 Visualizations & analysis 
 
 ---
 
