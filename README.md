@@ -56,7 +56,7 @@ python scripts/quick_demo.py
 
 ### 3️⃣ Full Analysis with Real Data
 
-**Option A: Python Script (Recommended)**
+**Option A: Python Script**
 ```bash
 python scripts/volatility_forecasting_analysis.py
 ```
