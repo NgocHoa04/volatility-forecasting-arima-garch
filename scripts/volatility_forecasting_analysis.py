@@ -871,6 +871,110 @@ def christoffersen_test(actual, var_series):
     }
 
 
+def dm_test(e1, e2, loss='mse', h=1):
+    """
+    Diebold-Mariano test for forecast comparison.
+    
+    Parameters:
+    -----------
+    e1 : array-like
+        Forecast errors of model 1 (benchmark)
+    e2 : array-like
+        Forecast errors of model 2
+    loss : str
+        Loss function: 'mse', 'mae', or 'qlike'
+    h : int
+        Lags for Newey-West HAC variance
+    
+    Returns:
+    --------
+    dm_stat : float
+        DM test statistic
+    p_val : float
+        Two-tailed p-value
+    """
+    if loss == 'mse':
+        d = e1**2 - e2**2
+    elif loss == 'mae':
+        d = np.abs(e1) - np.abs(e2)
+    elif loss == 'qlike':
+        raise ValueError("Use dm_qlike() instead")
+    else:
+        raise ValueError(f"Unknown loss: {loss}")
+    
+    T = len(d)
+    d_bar = np.mean(d)
+    
+    # HAC variance (Newey-West, h lags)
+    gamma0 = np.var(d, ddof=1)
+    acov = sum([
+        (1 - j/(h+1)) * np.cov(d[j:], d[:-j])[0,1]
+        for j in range(1, h+1)
+    ])
+    var_d = (gamma0 + 2*acov) / T
+    
+    dm_stat = d_bar / np.sqrt(var_d)
+    p_val = 2 * (1 - stats.norm.cdf(abs(dm_stat)))
+    return dm_stat, p_val
+
+
+def qlike_loss(sigma_hat, rv):
+    """
+    QLIKE loss function.
+    
+    Parameters:
+    -----------
+    sigma_hat : array-like
+        Forecasted volatility
+    rv : array-like
+        Realized volatility
+    
+    Returns:
+    --------
+    loss : array
+        QLIKE loss values
+    """
+    return np.log(sigma_hat**2) + (rv**2) / (sigma_hat**2)
+
+
+def dm_qlike(sigma_harv, sigma_garch, rv):
+    """
+    Diebold-Mariano test using QLIKE loss.
+    Negative statistic = HAR-RV better; positive = GARCH better.
+    
+    Parameters:
+    -----------
+    sigma_harv : array-like
+        Volatility forecasts from HAR-RV (benchmark)
+    sigma_garch : array-like
+        Volatility forecasts from GARCH model
+    rv : array-like
+        Realized volatility
+    
+    Returns:
+    --------
+    dm_stat : float
+        DM test statistic
+    p_val : float
+        Two-tailed p-value
+    """
+    L1 = qlike_loss(sigma_harv, rv)
+    L2 = qlike_loss(sigma_garch, rv)
+    d = L1 - L2  # negative = HAR-RV better
+    
+    T = len(d)
+    d_bar = np.mean(d)
+    
+    # Newey-West HAC, h=1
+    gamma0 = np.var(d, ddof=1)
+    gamma1 = np.cov(d[1:], d[:-1])[0,1]
+    var_d = (gamma0 + 2*(1 - 1/2)*gamma1) / T
+    
+    dm_stat = d_bar / np.sqrt(var_d)
+    p_val = 2 * (1 - stats.norm.cdf(abs(dm_stat)))
+    return dm_stat, p_val
+
+
 def run_full_backtesting(actual, var_es_all, confidence_levels=None):
     """Run full backtesting."""
     if confidence_levels is None:
@@ -963,7 +1067,84 @@ print()
 
 
 # ──────────────────────────────────────────────────────────────────────────
-# SECTION 11: FINAL SUMMARY
+# SECTION 12: DIEBOLD-MARIANO FORECAST COMPARISON
+# ──────────────────────────────────────────────────────────────────────────
+
+print('=' * 70)
+print('  DIEBOLD-MARIANO TEST: FORECAST COMPARISON')
+print('=' * 70)
+print()
+
+# Prepare data for DM test
+rv_test = test['Log_Return'].abs()  # Realized volatility (proxy)
+
+# Extract forecasts and align indices
+sigma_har = vol_forecasts['HAR-RV'].reindex(test.index).values
+dm_results_mae = []
+dm_results_qlike = []
+
+print('--- MAE Loss Comparison (HAR-RV vs GARCH models) ---')
+print(f"{'Model':<30} {'DM_MAE':>10} {'p-value':>10} {'Sig':>5}")
+print("-" * 60)
+
+for model_name, sigma_g in [
+    ('GARCH(1,1)-Normal', vol_forecasts['GARCH(1,1)-Normal'].reindex(test.index).values),
+    ('GARCH(1,1)-Student-t', vol_forecasts['GARCH(1,1)-Student-t'].reindex(test.index).values),
+    ('GJR-GARCH(1,1)-Normal', vol_forecasts['GJR-GARCH(1,1)-Normal'].reindex(test.index).values),
+    ('GJR-GARCH(1,1)-Student-t', vol_forecasts['GJR-GARCH(1,1)-Student-t'].reindex(test.index).values),
+    ('EGARCH(1,1)-Normal', vol_forecasts['EGARCH(1,1)-Normal'].reindex(test.index).values),
+    ('EGARCH(1,1)-Student-t', vol_forecasts['EGARCH(1,1)-Student-t'].reindex(test.index).values),
+]:
+    e1 = rv_test.values - sigma_har
+    e2 = rv_test.values - sigma_g
+    dm, p = dm_test(e1, e2, loss='mae', h=1)
+    sig = '***' if p < 0.001 else '**' if p < 0.01 else '*' if p < 0.05 else 'n.s.'
+    print(f"{model_name:<30} {dm:>10.4f} {p:>10.4f} {sig:>5}")
+    dm_results_mae.append({
+        'Model': model_name,
+        'DM_MAE': round(dm, 4),
+        'p-value': round(p, 4),
+        'Significant': sig
+    })
+
+print()
+print('--- QLIKE Loss Comparison (HAR-RV vs GARCH models) ---')
+print(f"{'Model':<30} {'DM_QLIKE':>10} {'p-value':>10} {'Sig':>5}")
+print("-" * 60)
+
+for model_name, sigma_g in [
+    ('GARCH(1,1)-Normal', vol_forecasts['GARCH(1,1)-Normal'].reindex(test.index).values),
+    ('GARCH(1,1)-Student-t', vol_forecasts['GARCH(1,1)-Student-t'].reindex(test.index).values),
+    ('GJR-GARCH(1,1)-Normal', vol_forecasts['GJR-GARCH(1,1)-Normal'].reindex(test.index).values),
+    ('GJR-GARCH(1,1)-Student-t', vol_forecasts['GJR-GARCH(1,1)-Student-t'].reindex(test.index).values),
+    ('EGARCH(1,1)-Normal', vol_forecasts['EGARCH(1,1)-Normal'].reindex(test.index).values),
+    ('EGARCH(1,1)-Student-t', vol_forecasts['EGARCH(1,1)-Student-t'].reindex(test.index).values),
+]:
+    dm, p = dm_qlike(sigma_har, sigma_g, rv_test.values)
+    sig = '***' if p < 0.001 else '**' if p < 0.01 else '*' if p < 0.05 else 'n.s.'
+    print(f"{model_name:<30} {dm:>10.4f} {p:>10.4f} {sig:>5}")
+    dm_results_qlike.append({
+        'Model': model_name,
+        'DM_QLIKE': round(dm, 4),
+        'p-value': round(p, 4),
+        'Significant': sig
+    })
+
+# Save DM test results
+dm_mae_df = pd.DataFrame(dm_results_mae)
+dm_qlike_df = pd.DataFrame(dm_results_qlike)
+dm_mae_df.to_csv('results/appendix_dm_test_mae.csv', index=False)
+dm_qlike_df.to_csv('results/appendix_dm_test_qlike.csv', index=False)
+
+print()
+print('DM test results saved:')
+print('  results/appendix_dm_test_mae.csv')
+print('  results/appendix_dm_test_qlike.csv')
+print()
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# SECTION 13: FINAL SUMMARY
 # ──────────────────────────────────────────────────────────────────────────
 
 def save_all_results(model_comparison, backtest_results, var_es_all,
