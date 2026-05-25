@@ -1144,7 +1144,121 @@ print()
 
 
 # ──────────────────────────────────────────────────────────────────────────
-# SECTION 13: FINAL SUMMARY
+# SECTION 13: SUBSAMPLE BACKTESTING (Stress Periods)
+# ──────────────────────────────────────────────────────────────────────────
+
+print('=' * 70)
+print('  SUBSAMPLE BACKTESTING: MODEL PERFORMANCE ACROSS MARKET REGIMES')
+print('=' * 70)
+print()
+
+# Define stress periods for subsample analysis
+periods = {
+    'Full Test':        ('2021-12-29', '2024-12-30'),
+    'Bear Market 2022': ('2022-01-01', '2022-12-31'),
+    'Recovery 2023-24': ('2023-01-01', '2024-12-30'),
+}
+
+# Backtesting function for subsample analysis
+def backtest_period_subsample(returns, var_es_dict, start, end):
+    """Run Kupiec POF test for a specific time period."""
+    mask = (returns.index >= start) & (returns.index <= end)
+    r = returns[mask]
+    v95 = var_es_dict['VaR_95'][mask]
+    v99 = var_es_dict['VaR_99'][mask]
+    
+    T = len(r)
+    viol_95 = (r < v95).sum()
+    viol_99 = (r < v99).sum()
+    
+    rate_95 = viol_95 / T if T > 0 else 0
+    rate_99 = viol_99 / T if T > 0 else 0
+    
+    # Kupiec LR statistic
+    def kupiec_p(N, T, alpha):
+        p_hat = N / T
+        if p_hat == 0 or p_hat == 1 or N == 0:
+            return np.nan
+        lr = -2 * np.log(
+            ((1-alpha)**(T-N) * alpha**N) /
+            ((1-p_hat)**(T-N) * p_hat**N)
+        )
+        return 1 - stats.chi2.cdf(lr, df=1)
+    
+    return {
+        'T': T,
+        'Viol_95': int(viol_95),
+        'Rate_95': f"{rate_95:.2%}",
+        'Kupiec_p_95': round(kupiec_p(viol_95, T, 0.05), 4),
+        'Pass_95': 'YES' if kupiec_p(viol_95, T, 0.05) > 0.05 else 'NO',
+        'Viol_99': int(viol_99),
+        'Rate_99': f"{rate_99:.2%}",
+        'Kupiec_p_99': round(kupiec_p(viol_99, T, 0.01), 4),
+        'Pass_99': 'YES' if kupiec_p(viol_99, T, 0.01) > 0.05 else 'NO',
+    }
+
+# Run subsample backtest for each model × each period
+results_subsample = {}
+for period_name, (start, end) in periods.items():
+    results_subsample[period_name] = {}
+    for model_name, ve in var_es_all.items():
+        results_subsample[period_name][model_name] = backtest_period_subsample(
+            test['Log_Return'], ve, start, end
+        )
+
+# Print results by period
+for period_name, period_results in results_subsample.items():
+    print(f"\n{'─'*95}")
+    print(f"Period: {period_name}")
+    print(f"{'─'*95}")
+    print(f"{'Model':<30} {'T':>5} {'V95':>5} {'Rate95':>8} {'Kup95':>8} {'Pass':>5} "
+          f"{'V99':>5} {'Rate99':>8} {'Kup99':>8} {'Pass':>5}")
+    print("-"*95)
+    
+    for model_name in sorted(period_results.keys()):
+        r = period_results[model_name]
+        print(f"{model_name:<30} {r['T']:>5} {r['Viol_95']:>5} {r['Rate_95']:>8} "
+              f"{r['Kupiec_p_95']:>8} {r['Pass_95']:>5} "
+              f"{r['Viol_99']:>5} {r['Rate_99']:>8} {r['Kupiec_p_99']:>8} {r['Pass_99']:>5}")
+
+print()
+print('Legend:')
+print('  T        = number of observations in period')
+print('  V95/V99  = number of violations')
+print('  Rate     = violation rate (actual %)')
+print('  Kup      = Kupiec p-value (p > 0.05 = PASS)')
+print('  Pass     = YES/NO based on p > 0.05 threshold')
+print()
+
+# Save subsample results to CSV
+subsample_df_list = []
+for period_name, period_results in results_subsample.items():
+    for model_name, r in period_results.items():
+        row = {
+            'Period': period_name,
+            'Model': model_name,
+            'T': r['T'],
+            'Violations_95': r['Viol_95'],
+            'Rate_95': r['Rate_95'],
+            'Kupiec_p_95': r['Kupiec_p_95'],
+            'Pass_95': r['Pass_95'],
+            'Violations_99': r['Viol_99'],
+            'Rate_99': r['Rate_99'],
+            'Kupiec_p_99': r['Kupiec_p_99'],
+            'Pass_99': r['Pass_99'],
+        }
+        subsample_df_list.append(row)
+
+df_subsample = pd.DataFrame(subsample_df_list)
+df_subsample.to_csv('results/appendix_subsample_backtesting.csv', index=False)
+
+print('Subsample backtesting results saved:')
+print('  results/appendix_subsample_backtesting.csv')
+print()
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# SECTION 14: FINAL SUMMARY
 # ──────────────────────────────────────────────────────────────────────────
 
 def save_all_results(model_comparison, backtest_results, var_es_all,
