@@ -1,23 +1,36 @@
 # Volatility Forecasting & Risk Analysis
 
-**Production-grade Python package for forecasting S&P 500 volatility and computing Value-at-Risk using GARCH and HAR-RV models.**
+Production-grade Python package for S&P 500 volatility forecasting and Value-at-Risk computation using ARIMA, GARCH, and HAR-RV models.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 
 ## Overview
 
-This package implements two complementary volatility forecasting approaches:
+This package implements:
 
+- **ARIMA**: Automatic order selection with specification comparison (Constant, AR(1), ARMA(1,1), AR(4))
 - **GARCH Family**: 6 variants (GARCH, GJR-GARCH, EGARCH × Normal/Student-t)
-- **HAR-RV**: Multi-horizon linear regression model
+- **GJR-GARCH Restricted**: LR test comparing p=0 (asymmetry only) vs p=1 (symmetric + asymmetric)
+- **HAR-RV**: Multi-horizon regression on realized volatility proxies
 
-Features:
-- ✅ 755-step expanding window rolling forecasts
-- ✅ VaR/ES computation at 95%/99% confidence
-- ✅ Kupiec POF + Christoffersen backtesting
-- ✅ Model comparison and accuracy metrics
-- ✅ Verified end-to-end execution
+Key features:
+- ARIMA specification comparison with AIC/BIC/Ljung-Box metrics
+- Restricted vs unrestricted GJR-GARCH hypothesis testing
+- 755-step expanding window rolling forecasts
+- VaR/ES computation at 95%/99% confidence levels
+- Kupiec POF and Christoffersen backtesting
+- Forecast accuracy comparison (MSE, MAE, QLIKE, Diebold-Mariano)
+
+## Installation
+
+```bash
+git clone <repo-url>
+cd volatility-forecasting-arima-garch
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
+```
 
 ## Quick Start
 
@@ -67,7 +80,7 @@ jupyter notebook notebooks/00_volatility_forecasting_VaR.ipynb
 
 ---
 
-## Structure
+## Project Structure
 
 ```
 notebooks/                            # Interactive analysis
@@ -107,82 +120,126 @@ results/                              # Output CSVs
 report/figures/                       # Generated plots and project report
 ```
 
----
-
 ## Models
 
-### GARCH Family (6 Variants)
+### ARIMA (Mean)
 
-```
-├── GARCH(1,1)-Normal
-├── GARCH(1,1)-Student-t
-├── GJR-GARCH(1,1)-Normal
-├── GJR-GARCH(1,1)-Student-t
-├── EGARCH(1,1)-Normal
-└── EGARCH(1,1)-Student-t
-```
+Auto-ARIMA with specification comparison:
+- Constant Mean (0,0,0)
+- AR(1) (1,0,0)
+- ARMA(1,1) (1,0,1)
+- AR(4) (4,0,0)
 
-Selected by **AIC criterion**. Best model typically **Student-t GARCH** (captures fat tails).
+Evaluated on: AIC, BIC, Ljung-Box test (lag 10)
 
-### HAR-RV (Heterogeneous Autoregressive)
+### GARCH (Volatility)
 
-Linear regression on realized volatility proxies:
-- **RV_d**: Daily (|return|)
-- **RV_w**: 5-day average
-- **RV_m**: 22-day average
+| Model | Normal | Student-t |
+|-------|--------|-----------|
+| GARCH(1,1) | ✓ | ✓ |
+| GJR-GARCH(1,1) | ✓ | ✓ |
+| EGARCH(1,1) | ✓ | ✓ |
 
----
+Selected by AIC criterion. Student-t typically best (fat tails).
 
-## Configuration
+### GJR-GARCH Restricted
 
-Edit `src/volatility_forecasting/config.py`:
+**Hypothesis:** Does symmetric GARCH effect (α) improve asymmetric-only model?
+
+- **Unrestricted**: GJR(1,1) with p=1, o=1, q=1
+- **Restricted**: GJR(0,1,1) with p=0, o=1, q=1 (α ≡ 0)
+- **Test**: Likelihood Ratio test on ARIMA residuals
+- **Interpretation**: p > 0.05 → asymmetry sufficient; p < 0.05 → both terms needed
+
+### HAR-RV
+
+Regression on realized volatility proxies:
+- RV_d: Daily |return|
+- RV_w: 5-day average
+- RV_m: 22-day average
+
+## Usage
+
+### ARIMA Comparison
 
 ```python
-GARCH_P = 1              # GARCH order
-GARCH_Q = 1              # Q order
-VAR_CONFIDENCE = [0.95, 0.99]  # VaR levels
-HAR_LAGS_WEEKLY = 5
-HAR_LAGS_MONTHLY = 22
+from statsmodels.tsa.arima.model import ARIMA
+from statsmodels.stats.diagnostic import acorr_ljungbox
+
+specs = {'Constant': (0,0,0), 'AR(1)': (1,0,0), 'ARMA': (1,0,1), 'AR(4)': (4,0,0)}
+for name, order in specs.items():
+    model = ARIMA(returns, order=order)
+    res = model.fit()
+    lb = acorr_ljungbox(res.resid, lags=[10], return_df=True)
+    print(f"{name}: AIC={res.aic:.2f}, BIC={res.bic:.2f}, LB_p={lb['lb_pvalue'].values[0]:.4f}")
 ```
 
----
+### Restricted GJR-GARCH
 
-## Usage (Python API)
+```python
+from arch import arch_model
+from scipy import stats
+
+# Fit both models on ARIMA residuals
+gjr_unr = arch_model(arima_residuals, mean='Zero', vol='GARCH', p=1, o=1, q=1, dist='studentst')
+gjr_res = arch_model(arima_residuals, mean='Zero', vol='GARCH', p=0, o=1, q=1, dist='studentst')
+res_unr = gjr_unr.fit(disp='off')
+res_res = gjr_res.fit(disp='off')
+
+# LR test
+lr_stat = 2 * (res_unr.loglikelihood - res_res.loglikelihood)
+lr_pval = 1 - stats.chi2.cdf(lr_stat, df=1)
+print(f"LR: {lr_stat:.4f}, p-value: {lr_pval:.4f}")
+```
+
+### Rolling Forecast
 
 ```python
 from src.volatility_forecasting.models.garch_models import rolling_volatility_forecast
-from src.volatility_forecasting.analysis.var_analysis import compute_var_es
 
-# Rolling GARCH forecast (expanding window)
 vol_forecast = rolling_volatility_forecast(
-    full_returns=returns,
-    test_index=test.index,
-    train_size=len(train),
+    full_returns=returns, test_index=test.index, train_size=len(train),
     vol='Garch', p=1, o=1, q=1, dist='t'
 )
-
-# Compute VaR & ES
-var_results = compute_var_es(vol_forecast, confidence_levels=[0.95, 0.99], dist='t')
-print(f"VaR 95%: {var_results['VaR_95'].mean():.4f}%")
 ```
 
----
+### VaR & ES
+
+```python
+from src.volatility_forecasting.analysis.var_analysis import compute_var_es
+
+results = compute_var_es(vol_forecast, confidence_levels=[0.95, 0.99], dist='t')
+print(f"VaR 95%: {results['VaR_95'].mean():.4f}%")
+print(f"ES 95%: {results['ES_95'].mean():.4f}%")
+```
 
 ## Outputs
 
 **CSV Results** (`results/`)
-- `model_comparison.csv` — AIC/BIC ranking
-- `volatility_forecasts.csv` — Forecasts all models
-- `var_forecasts.csv` — VaR/ES values
-- `results_backtesting.csv` — Kupiec + Christoffersen tests
+- `model_comparison.csv` — GARCH AIC/BIC ranking
+- `appendix_table13_arima_params.csv` — ARIMA specification comparison
+- `volatility_forecasts.csv` — Forecasts from all models
+- `var_forecasts.csv` — VaR/ES at 95%/99%
+- `results_backtesting.csv` — Kupiec POF and Christoffersen tests
+- `results_har_vs_garch_accuracy.csv` — HAR vs GARCH comparison (MSE/MAE/QLIKE)
+- `appendix_dm_test_*.csv` — Diebold-Mariano tests
 
-**Plots** (`report/figures/`) - Generated when running with real data
+**Plots** (`report/figures/`) — Generated visualizations
 
----
+## Configuration
+
+Edit `src/volatility_forecasting/config.py`:
+```python
+GARCH_P = 1
+GARCH_Q = 1
+VAR_CONFIDENCE = [0.95, 0.99]
+HAR_LAGS_WEEKLY = 5
+HAR_LAGS_MONTHLY = 22
+```
 
 ## Testing
 
 ```bash
 pytest tests/
-python scripts/quick_demo.py  # End-to-end verification
+python scripts/quick_demo.py
 ```
