@@ -17,8 +17,6 @@ Features:
 - ✅ VaR/ES computation at 95%/99% confidence
 - ✅ Kupiec POF + Christoffersen backtesting
 - ✅ Model comparison and accuracy metrics
-- ✅ Production-ready code (type hints, docstrings)
-- ✅ Verified end-to-end execution
 
 ## Quick Start
 
