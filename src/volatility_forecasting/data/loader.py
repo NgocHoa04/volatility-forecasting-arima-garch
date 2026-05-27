@@ -78,7 +78,7 @@ class DataLoader:
         self.end_date = end_date
         self.data = None
     
-    def download(self, force: bool = False) -> pd.DataFrame:
+    def download(self, force: bool = False, adjusted: bool = True) -> pd.DataFrame:
         """
         Download data from Yahoo Finance using download_data() function.
         
@@ -86,18 +86,34 @@ class DataLoader:
         ----------
         force : bool
             Force download even if file exists
+        adjusted : bool
+            If True, return adjusted close prices; if False, return OHLC for proxies
             
         Returns
         -------
         pd.DataFrame
-            Downloaded price data with columns: Close, Log_Return
+            Downloaded price data with columns: Close, Log_Return (or Open, High, Low, Close for OHLC)
         """
-        if Path('dataset/price_data.csv').exists() and not force:
-            logger.info("Loading existing data from dataset/price_data.csv")
-            return self.load_csv('dataset/price_data.csv')
-        
-        self.data = download_data(self.ticker, self.start_date, self.end_date)
-        return self.data
+        if adjusted:
+            if Path('dataset/price_data.csv').exists() and not force:
+                logger.info("Loading existing data from dataset/price_data.csv")
+                return self.load_csv('dataset/price_data.csv')
+            
+            self.data = download_data(self.ticker, self.start_date, self.end_date)
+            return self.data
+        else:
+            # Download OHLC data (unadjusted)
+            logger.info(f"Downloading OHLC data: {self.ticker} from {self.start_date} to {self.end_date}")
+            raw = yf.download(self.ticker, start=self.start_date, end=self.end_date, 
+                            auto_adjust=False, progress=False)
+            
+            # Select only OHLC columns
+            ohlc_data = raw[['Open', 'High', 'Low', 'Close']].copy()
+            ohlc_data = ohlc_data.dropna()
+            
+            logger.info(f"OHLC data downloaded: {len(ohlc_data):,} observations")
+            return ohlc_data
+
     
     def load_csv(self, filepath: str) -> pd.DataFrame:
         """
