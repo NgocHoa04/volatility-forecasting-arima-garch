@@ -1,0 +1,8 @@
+Model,In_MCS,Mean_MSE
+HAR-RV (GARMAN_KLASS),True,0.164849
+"EGARCH(1,1)-Normal",True,0.242709
+"EGARCH(1,1)-Student-t",True,0.260365
+"GJR-GARCH(1,1)-Normal",True,0.265832
+"GARCH(1,1)-Normal",True,0.266738
+"GARCH(1,1)-Student-t",True,0.286008
+"GJR-GARCH(1,1)-Student-t",True,0.291785

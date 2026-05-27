@@ -1,0 +1,7 @@
+Model,vs_Benchmark,DM_Stat,p_value,Holm_threshold,Reject_H0,Significant
+"GJR-GARCH(1,1)-Student-t","EGARCH(1,1)-Normal",-4.0919,0.0,0.0083,True,***
+"GARCH(1,1)-Student-t","EGARCH(1,1)-Normal",-3.8182,0.0001,0.01,True,***
+HAR-RV (GARMAN_KLASS),"EGARCH(1,1)-Normal",3.7896,0.0002,0.0125,True,***
+"EGARCH(1,1)-Student-t","EGARCH(1,1)-Normal",-3.5001,0.0005,0.0167,True,***
+"GJR-GARCH(1,1)-Normal","EGARCH(1,1)-Normal",-3.1715,0.0015,0.025,True,**
+"GARCH(1,1)-Normal","EGARCH(1,1)-Normal",-2.3077,0.021,0.05,True,*
