@@ -67,12 +67,13 @@ The notebook is self-contained and walks through the full pipeline from data dow
 ```
 volatility-forecasting-arima-garch/
 │
-├── volatility_forecasting_VaR.ipynb             # Main notebook — full pipeline
+├── dataset/                                    # Input data (downloaded via yfinance)
+│   └── price_data.csv                          # S&P 500 daily prices (Close + OHLC)
+├── notebooks                                   # Jupyter notebook files
+│   └── volatility_forecasting_VaR.ipynb        # Main notebook — full pipeline
 ├── requirements.txt
 ├── .gitignore
 │
-├── dataset/                                    # Input data (downloaded via yfinance)
-│   └── price_data.csv                          # S&P 500 daily prices (Close + OHLC)
 ├── src/                                        
 │   └── volatility_forecasting/
 │       ├── models/
