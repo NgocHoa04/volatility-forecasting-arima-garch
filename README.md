@@ -71,8 +71,6 @@ volatility-forecasting-arima-garch/
 │   └── price_data.csv                          # S&P 500 daily prices (Close + OHLC)
 ├── notebooks                                   # Jupyter notebook files
 │   └── volatility_forecasting_VaR.ipynb        # Main notebook — full pipeline
-├── requirements.txt
-├── .gitignore
 │
 ├── src/                                        
 │   └── volatility_forecasting/
@@ -94,9 +92,12 @@ volatility-forecasting-arima-garch/
 │   ├── har_proxy_mse_vs_qlike_agreement.csv    # MSE vs QLIKE stability check
 │   └── appendix_dm_test_*.csv                  # Diebold-Mariano pairwise tests
 │
-└── report/
-    ├── figures/                                # Generated plots (auto-saved)
-    └── time_series_report.pdf                  # Project Report
+├── report/
+│   ├── figures/                                # Generated plots (auto-saved)
+│   └── time_series_report.pdf                  # Project Report
+│
+├── requirements.txt
+└── .gitignore
 ```
 
 ---
