@@ -73,15 +73,15 @@ volatility-forecasting-arima-garch/
 │
 ├── dataset/                                    # Input data (downloaded via yfinance)
 │   └── price_data.csv                          # S&P 500 daily prices (Close + OHLC)
-├── src/                                      # Reusable package (imported by notebook)
+├── src/                                        
 │   └── volatility_forecasting/
 │       ├── models/
-│       │   └── har_model.py                  # HARModel class — OLS fit, rolling forecast
+│       │   └── har_model.py                    # HARModel class — OLS fit, rolling forecast
 │       └── utils/
-│           ├── ohlc_estimators.py            # parkinson_volatility, garman_klass_volatility,
-│           │                                 # yang_zhang_volatility, compute_multiple_proxies
-│           └── statistical_tests.py          # diebold_mariano_test, holm_correction,
-│                                             # model_confidence_set
+│           ├── ohlc_estimators.py              # parkinson_volatility, garman_klass_volatility,
+│           │                                   # yang_zhang_volatility, compute_multiple_proxies
+│           └── statistical_tests.py            # diebold_mariano_test, holm_correction,
+│                                               # model_confidence_set
 │
 ├── results/                                    # Model outputs (auto-generated)
 │   ├── model_comparison.csv                    # GARCH variant AIC/BIC ranking
