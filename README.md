@@ -25,6 +25,7 @@ This project implements a hybrid ARIMA-GARCH modeling pipeline on S&P 500 daily 
 
 ## Quick Start
 
+
 ### 1️⃣ Prerequisites & Installation
 
 ```bash
