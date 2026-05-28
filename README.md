@@ -67,26 +67,26 @@ The notebook is self-contained and walks through the full pipeline from data dow
 ```
 volatility-forecasting-arima-garch/
 │
-├── volatility_forecasting_VaR.ipynb     # Main notebook — full pipeline
+├── volatility_forecasting_VaR.ipynb             # Main notebook — full pipeline
 ├── requirements.txt
 ├── .gitignore
 │
-├── dataset/                             # Input data (downloaded via yfinance)
-│   └── price_data.csv                   # S&P 500 daily prices (Close + OHLC)
+├── dataset/                                    # Input data (downloaded via yfinance)
+│   └── price_data.csv                          # S&P 500 daily prices (Close + OHLC)
 │
-├── results/                             # Model outputs (auto-generated)
-│   ├── model_comparison.csv             # GARCH variant AIC/BIC ranking
-│   ├── volatility_forecasts.csv         # Rolling forecasts from all models
-│   ├── var_forecasts.csv                # VaR & ES at 95%/99%
-│   ├── results_backtesting.csv          # Kupiec POF & Christoffersen results
-│   ├── results_har_vs_garch_accuracy.csv  # HAR vs GARCH (MSE/MAE/QLIKE)
-│   ├── har_proxy_qlike_ranking_by_regime.csv  # OHLC proxy ranking by market regime
-│   ├── har_proxy_mse_vs_qlike_agreement.csv   # MSE vs QLIKE stability check
-│   └── appendix_dm_test_*.csv           # Diebold-Mariano pairwise tests
+├── results/                                    # Model outputs (auto-generated)
+│   ├── model_comparison.csv                    # GARCH variant AIC/BIC ranking
+│   ├── volatility_forecasts.csv                # Rolling forecasts from all models
+│   ├── var_forecasts.csv                       # VaR & ES at 95%/99%
+│   ├── results_backtesting.csv                 # Kupiec POF & Christoffersen results
+│   ├── results_har_vs_garch_accuracy.csv       # HAR vs GARCH (MSE/MAE/QLIKE)
+│   ├── har_proxy_qlike_ranking_by_regime.csv   # OHLC proxy ranking by market regime
+│   ├── har_proxy_mse_vs_qlike_agreement.csv    # MSE vs QLIKE stability check
+│   └── appendix_dm_test_*.csv                  # Diebold-Mariano pairwise tests
 │
 └── report/
-    ├── figures/                         # Generated plots (auto-saved)
-    └── time_series_report.pdf           # Project Report
+    ├── figures/                                # Generated plots (auto-saved)
+    └── time_series_report.pdf                  # Project Report
 ```
 
 ---
