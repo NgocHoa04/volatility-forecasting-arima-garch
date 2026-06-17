@@ -8,18 +8,20 @@ A comprehensive project for forecasting S&P 500 return volatility and estimating
 
 ## Overview
 
-This project implements a hybrid ARIMA-GARCH modeling pipeline on S&P 500 daily returns. The mean equation is modeled by ARIMA, the conditional variance by six GARCH variants, and VaR/ES are estimated and validated through formal backtesting. An advanced HAR-RV extension replaces the standard absolute-return proxy with OHLC-based volatility estimators (Parkinson, Garman-Klass, Yang-Zhang) and evaluates their impact on forecast accuracy across market regimes.
+This project implements a hybrid ARIMA-GARCH modeling pipeline on S&P 500 daily returns (2010–2024). The mean equation is modeled by ARIMA, the conditional variance by six GARCH variants, and VaR/ES are estimated and validated through formal backtesting. An advanced HAR-RV extension replaces the standard absolute-return proxy with OHLC-based volatility estimators (Parkinson, Garman-Klass, Yang-Zhang) and evaluates their impact on forecast accuracy across market regimes.
 
 **Pipeline:**
 1. Data collection via `yfinance` (closing prices + full OHLC)
-2. Stationarity testing & exploratory analysis
+2. Stationarity testing & exploratory analysis (ADF, KPSS, ACF/PACF)
 3. ARIMA specification comparison (Constant, AR(1), ARMA(1,1), AR(4)) — selected by AIC/BIC/Ljung-Box
-4. GARCH family fitting (6 variants: GARCH, GJR-GARCH, EGARCH × Normal/Student-t)
-5. Restricted GJR-GARCH — LR test for symmetric vs asymmetric effects
-6. HAR-RV benchmark — multi-horizon regression on realized volatility proxies
-7. **Advanced HAR-RV** — OHLC-based estimators (Parkinson, Garman-Klass, Yang-Zhang) as superior RV proxies
-8. VaR & ES estimation at 95%/99% confidence levels
-9. Backtesting — Kupiec POF & Christoffersen tests; forecast accuracy (MSE, MAE, QLIKE, Diebold-Mariano with Holm correction, Model Confidence Set)
+4. ARCH effect test on ARIMA residuals (ARCH-LM)
+5. GARCH family fitting (6 variants: GARCH, GJR-GARCH, EGARCH × Normal/Student-t)
+6. Restricted GJR-GARCH — LR test for symmetric vs asymmetric effects
+7. HAR-RV benchmark — multi-horizon OLS regression on realized volatility proxies
+8. **Advanced HAR-RV** — OHLC-based estimators (Parkinson, Garman-Klass, Yang-Zhang) as superior RV proxies; Diebold-Mariano + Holm correction; MCS; regime robustness
+9. VaR & ES estimation at 95%/99% confidence levels
+10. Backtesting — Kupiec POF & Christoffersen tests; subsample backtesting across market regimes
+11. Diebold-Mariano tests (MSE, MAE, QLIKE) with Holm–Bonferroni correction and Model Confidence Set
 
 ---
 
@@ -69,10 +71,11 @@ volatility-forecasting-arima-garch/
 │
 ├── dataset/                                    # Input data (downloaded via yfinance)
 │   └── price_data.csv                          # S&P 500 daily prices (Close + OHLC)
-├── notebooks                                   # Jupyter notebook files
+│
+├── notebooks/                                  # Jupyter notebook files
 │   └── volatility_forecasting_VaR.ipynb        # Main notebook — full pipeline
 │
-├── src/                                        
+├── src/
 │   └── volatility_forecasting/
 │       ├── models/
 │       │   └── har_model.py                    # HARModel class — OLS fit, rolling forecast
@@ -83,14 +86,19 @@ volatility-forecasting-arima-garch/
 │                                               # model_confidence_set
 │
 ├── results/                                    # Model outputs (auto-generated)
-│   ├── model_comparison.csv                    # GARCH variant AIC/BIC ranking
-│   ├── volatility_forecasts.csv                # Rolling forecasts from all models
-│   ├── var_forecasts.csv                       # VaR & ES at 95%/99%
-│   ├── results_backtesting.csv                 # Kupiec POF & Christoffersen results
-│   ├── results_har_vs_garch_accuracy.csv       # HAR vs GARCH (MSE/MAE/QLIKE)
-│   ├── har_proxy_qlike_ranking_by_regime.csv   # OHLC proxy ranking by market regime
+│   ├── har_proxy_accuracy.csv                  # HAR-RV proxy forecast accuracy (MSE/MAE/QLIKE)
+│   ├── har_proxy_ranking_by_regime.csv         # Proxy MSE ranking by market regime
+│   ├── har_proxy_qlike_ranking_by_regime.csv   # Proxy QLIKE ranking by market regime
 │   ├── har_proxy_mse_vs_qlike_agreement.csv    # MSE vs QLIKE stability check
-│   └── appendix_dm_test_*.csv                  # Diebold-Mariano pairwise tests
+│   ├── cross_proxy_qlike_comparison.csv        # Cross-proxy QLIKE comparison
+│   ├── cross_proxy_rank_comparison.csv         # Cross-proxy rank comparison
+│   ├── unified_mcs_summary.csv                 # Model Confidence Set results
+│   ├── unified_holm_dm_test.csv                # Holm-corrected DM tests (all models)
+│   ├── proxies_train_cleaned.csv               # Cleaned OHLC proxies — train set
+│   ├── proxies_test_cleaned.csv                # Cleaned OHLC proxies — test set
+│   ├── dm_test_full_3loss.csv                  # DM test full results (MSE, MAE, QLIKE)
+│   ├── table14_dm_test_3loss.csv               # DM test summary table
+│   └── appendix_*.csv                          # Appendix tables (see Appendix section)
 │
 ├── report/
 │   ├── figures/                                # Generated plots (auto-saved)
@@ -131,6 +139,18 @@ Each proxy is used to fit and generate rolling HAR-RV forecasts, with performanc
 ## Results
 
 Outputs are saved to `results/` (CSV tables) and `report/figures/` (plots). VaR coverage rates are evaluated against nominal confidence levels (95%, 99%) via Kupiec and Christoffersen tests. Model forecasts are compared using MSE, MAE, QLIKE, and Diebold-Mariano tests with Holm correction. OHLC proxy rankings are assessed for stability across market regimes.
+
+### Appendix Tables
+
+| Table | Contents | File |
+|---|---|---|
+| A | Full GARCH parameter table: ω, α, β, γ, ν, AIC, BIC, LogL, persistence | `appendix_table12_garch_params.csv` |
+| B | ARIMA(4,0,0) coefficient table: estimate, SE, t-stat, p-value | `appendix_table13_arima_params.csv` |
+| C | Average VaR 95%, VaR 99%, ES 99% + violation counts for all models | `appendix_table15_var_es_summary.csv` |
+| D | Diebold-Mariano test (MSE and MAE) — HAR-RV vs each GARCH model | `appendix_dm_test_mse.csv`, `appendix_dm_test_mae.csv` |
+| E | Expected Shortfall backtesting — McNeil & Frey (2000) exceedance residuals | `appendix_es_backtest.csv` |
+| F | GARCH standardized residual diagnostics: ARCH-LM, Jarque-Bera, skewness, kurtosis | `appendix_garch_diagnostics.csv` |
+| — | Subsample backtesting across market regimes | `appendix_subsample_backtesting.csv` |
 
 ---
 
